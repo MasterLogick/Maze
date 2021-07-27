@@ -3,7 +3,7 @@ project(Maze VERSION 0.0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 #load glad lib project
-add_subdirectory(glad_sources)
+add_subdirectory(glad)
 
 #load glfw lib project
 set(GLFW_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
