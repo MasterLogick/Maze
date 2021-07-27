@@ -7,7 +7,6 @@
 #include <sstream>
 #include <iostream>
 #include "Shader.h"
-#include "platformDependentDefines.h"
 
 #define ERROR_BUFFER_SIZE 8192
 

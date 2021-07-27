@@ -14,6 +14,10 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(glfw)
 
+#load glm lib project
+#set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
+add_subdirectory(glm)
+
 #adding main sources
 file(GLOB_RECURSE SOURCE_FILES "src/*")
 add_executable(Maze ${SOURCE_FILES})
@@ -22,7 +26,7 @@ add_executable(Maze ${SOURCE_FILES})
 target_compile_definitions(Maze PUBLIC GLFW_INCLUDE_NONE)
 
 #add headers of libs
-target_include_directories(Maze PUBLIC glfw/include)
+#target_include_directories(Maze PUBLIC glfw/include)
 
 #link libraries
-target_link_libraries(Maze PUBLIC glfw glad)
+target_link_libraries(Maze PUBLIC glfw glad glm)

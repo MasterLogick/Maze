@@ -5,7 +5,6 @@
 #include <map>
 #include <glad/gl.h>
 
-
 class Shader {
 private:
     GLuint program;

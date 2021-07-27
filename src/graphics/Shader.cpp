@@ -1,12 +1,10 @@
-#include <gtc/matrix_transform.hpp>
-#include <gtc/type_ptr.inl>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.inl>
 #include <iostream>
 #include "Shader.h"
-#include "glad/glad.h"
+#include "glad/gl.h"
 #include "ShaderLoader.h"
-#include "mat4x4.hpp"
-#include "../Graphics.h"
-#include "../UI/UIManager.h"
+#include <glm/mat4x4.hpp>
 
 const int SCREEN_INFO_BINDING_POINT = 0;
 const char *SCREEN_INFO_BINDING_POINT_NAME{"Screen"};
@@ -22,14 +20,13 @@ Shader::Shader(GLuint id, std::map<std::string, int> *uniforms) {
 }
 
 void Shader::initialise() {
-    glm::mat4x4 ortho = glm::ortho<float>(0, Graphics::mainScreen->getWidth(), 0, Graphics::mainScreen->getHeight(),
-                                          0, MAX_LAYERS_DEPTH);
+    float width = 640;
+    float height = 480;
+    glm::mat4x4 ortho = glm::ortho<float>(0, width, 0, height, 0, 20);
     GLuint blockVBO;
     glCreateBuffers(1, &blockVBO);
     glNamedBufferData(blockVBO, sizeof(glm::mat4x4) + 4 * sizeof(float), nullptr, GL_STATIC_DRAW);
     glNamedBufferSubData(blockVBO, 0L, sizeof(glm::mat4x4), glm::value_ptr(ortho));
-    float width = Graphics::mainScreen->getWidth();
-    float height = Graphics::mainScreen->getHeight();
     glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4), sizeof(float), &width);
     glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4) + sizeof(float), sizeof(float), &height);
     glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4) + 2 * sizeof(float), 2 * sizeof(float), nullptr);

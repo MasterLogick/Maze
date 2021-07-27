@@ -7,8 +7,8 @@ Shader *ShaderLoader::loadShader(char *name, char **uniforms, int count) {
     std::ifstream fShaderFile;
     vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    std::string vertexPath = std::string(RESOURCE_ROOT) + "/Shaders/" + name + "/vertex.glsl";
-    std::string fragmentPath = std::string(RESOURCE_ROOT) + "/Shaders/" + name + "/fragment.glsl";
+    std::string vertexPath = std::string(name) + "/vertex.glsl";
+    std::string fragmentPath = std::string(name) + "/fragment.glsl";
     try {
         vShaderFile.open(vertexPath);
         fShaderFile.open(fragmentPath);
@@ -90,9 +90,9 @@ GLuint ShaderLoader::createShader(const char *code, GLenum type) {
     glShaderSource(shader, 1, &code, nullptr);
     glCompileShader(shader);
     GLint success;
-    GLchar infoLog[ERROR_BUFFER_SIZE];
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
+        GLchar infoLog[ERROR_BUFFER_SIZE];
         glGetShaderInfoLog(shader, ERROR_BUFFER_SIZE, nullptr, infoLog);
         std::cout << "ERROR::SHADER_COMPILATION_ERROR " << infoLog << std::endl;
         return 0;
