@@ -1,9 +1,23 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 #include <glad/gl.h>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include "graphics/shader/Shader.h"
+#include "graphics/shader/ShaderProgram.h"
+#include "graphics/post_proccessing/MSAAPostProcessor.h"
 
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH 1000
+#define WINDOW_HEIGHT 500
+#define SCREEN_INFO_BINDING_POINT 0
+
+bool shouldClose = false;
+
+void shouldCloseCallback(GLFWwindow *window) {
+    shouldClose = true;
+    std::cout << "lol" << std::endl;
+}
 
 void error_callback(int error, const char *description) {
     std::cout << "Error" << error << " " << description << std::endl;
@@ -15,7 +29,9 @@ void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum s
                                  const GLchar *message,
                                  const void *userParam) {
     if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
-
+    if (source == GL_DEBUG_SOURCE_SHADER_COMPILER && type == GL_DEBUG_TYPE_OTHER &&
+        severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+        return;
     std::cout << "---------------" << std::endl;
     std::cout << "Debug message (" << id << "): " << message << std::endl;
 
@@ -87,19 +103,10 @@ void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum s
             break;
     }
     std::cout << std::endl;
+    std::cout << "---------------" << std::endl;
 }
 
 #endif
-GLuint vao;
-
-void init() {
-    glCreateVertexArrays(1, &vao);
-
-}
-
-void draw() {
-
-}
 
 int main() {
     glfwSetErrorCallback(error_callback);
@@ -127,6 +134,8 @@ int main() {
         glfwTerminate();
         return -1;
     }
+    glfwSetWindowCloseCallback(window, shouldCloseCallback);
+    glfwSwapInterval(1);
 #ifndef NDEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -135,8 +144,71 @@ int main() {
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
-    while (true) {
-        draw();
+
+    Shader vert(GL_VERTEX_SHADER);
+    if (!vert.loadShader("/home/user/CLionProjects/Maze/res/shaders/basic/vertex.glsl")) {
+        GLchar log[LOG_BUFFER_LENGTH];
+        vert.getInfoLog(LOG_BUFFER_LENGTH, nullptr, log);
+        std::cout << log << std::endl;
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return -1;
+    }
+    Shader frag(GL_FRAGMENT_SHADER);
+    if (!frag.loadShader("/home/user/CLionProjects/Maze/res/shaders/basic/fragment.glsl")) {
+        GLchar log[LOG_BUFFER_LENGTH];
+        frag.getInfoLog(LOG_BUFFER_LENGTH, nullptr, log);
+        std::cout << log << std::endl;
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return -1;
+    }
+    ShaderProgram shaderProgram;
+    shaderProgram.attachProgram(vert);
+    shaderProgram.attachProgram(frag);
+    shaderProgram.link();
+
+    glm::mat4x4 ortho = glm::ortho<float>(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT);
+    GLuint blockVBO;
+    glCreateBuffers(1, &blockVBO);
+    glNamedBufferData(blockVBO, sizeof(glm::mat4x4) + 4 * sizeof(float), nullptr, GL_STATIC_DRAW);
+    glNamedBufferSubData(blockVBO, 0L, sizeof(glm::mat4x4), glm::value_ptr(ortho));
+    float width = WINDOW_WIDTH;
+    float height = WINDOW_HEIGHT;
+    glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4), sizeof(float), &width);
+    glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4) + sizeof(float), sizeof(float), &height);
+    glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4) + 2 * sizeof(float), 2 * sizeof(float), nullptr);
+    glBindBufferRange(GL_UNIFORM_BUFFER, SCREEN_INFO_BINDING_POINT, blockVBO, 0,
+                      sizeof(glm::mat4x4) + 2 * sizeof(float));
+
+    shaderProgram.bindUniformBlock(SCREEN_INFO_BINDING_POINT, const_cast<char *>("Screen"));
+
+    GLuint vao;
+    GLuint vbo;
+    float positions[]{0, 0, WINDOW_WIDTH, 0, WINDOW_WIDTH / 2, WINDOW_HEIGHT};
+
+    glCreateVertexArrays(1, &vao);
+    glCreateBuffers(1, &vbo);
+    glNamedBufferData(vbo, 3 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
+    GLuint attribLoc = shaderProgram.getAttribLocation("localPos");
+    glEnableVertexArrayAttrib(vao, attribLoc);
+    glVertexArrayAttribFormat(vao, attribLoc, 2, GL_FLOAT, false, 0);
+    glVertexArrayVertexBuffer(vao, attribLoc, vbo, 0, 2 * sizeof(float));
+
+    MSAAPostProcessor processor(4, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    while (!shouldClose) {
+        processor.prepareContext();
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        shaderProgram.bind();
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        processor.postProcess(0);
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+
     }
     glfwDestroyWindow(window);
     glfwTerminate();
