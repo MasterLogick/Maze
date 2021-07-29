@@ -1,7 +1,7 @@
 #ifndef MAZE_SHADER_H
 #define MAZE_SHADER_H
 
-#include <glad/gl.h>
+#include <glad/types.h>
 
 class Shader {
 private:
@@ -12,7 +12,7 @@ public:
 
     ~Shader();
 
-    int loadShader(char *path);
+    int loadShader(char *code);
 
     void getInfoLog(GLsizei bufSize, GLsizei *length, GLchar *infoLog);
 

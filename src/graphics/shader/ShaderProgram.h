@@ -1,12 +1,13 @@
 #ifndef MAZE_SHADERPROGRAM_H
 #define MAZE_SHADERPROGRAM_H
 
-#include <glad/gl.h>
+#include <glad/types.h>
 #include <map>
 #include <string>
-#include "Shader.h"
 
 #define LOG_BUFFER_LENGTH 8192
+
+class Shader;
 
 class ShaderProgram {
 private:

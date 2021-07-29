@@ -1,6 +1,8 @@
 #include "MSAAPostProcessor.h"
-#include "../shader/Shader.h"
 #include <iostream>
+#include <glad/gl.h>
+#include "../shader/Shaders.h"
+#include "../shader/ShaderProgram.h"
 
 static float verticesData[] = {
         1.0f, 1.0f, 1.0f, 1.0f,
@@ -43,24 +45,8 @@ MSAAPostProcessor::MSAAPostProcessor(int level, int width, int height) : width(w
     glCreateVertexArrays(1, &vao);
     glCreateBuffers(1, &vbo);
 
-    Shader vert(GL_VERTEX_SHADER);
-    if (!vert.loadShader("/home/user/CLionProjects/Maze/res/shaders/msaa/vertex.glsl")) {
-        GLchar log[LOG_BUFFER_LENGTH];
-        vert.getInfoLog(LOG_BUFFER_LENGTH, nullptr, log);
-        std::cout << log << std::endl;
-    }
-    Shader frag(GL_FRAGMENT_SHADER);
-    if (!frag.loadShader("/home/user/CLionProjects/Maze/res/shaders/msaa/fragment.glsl")) {
-        GLchar log[LOG_BUFFER_LENGTH];
-        frag.getInfoLog(LOG_BUFFER_LENGTH, nullptr, log);
-        std::cout << log << std::endl;
-    }
-    shaderProgram.attachProgram(vert);
-    shaderProgram.attachProgram(frag);
-    shaderProgram.link();
-
-    GLuint positionLocation = shaderProgram.getAttribLocation("position");
-    GLuint texCordLocation = shaderProgram.getAttribLocation("texCord");
+    GLuint positionLocation = msaa_Shader->getAttribLocation("position");
+    GLuint texCordLocation = msaa_Shader->getAttribLocation("texCord");
 
     glNamedBufferData(vbo, 4 * 2 * 2 * sizeof(float), verticesData, GL_STATIC_DRAW);
 
@@ -72,8 +58,8 @@ MSAAPostProcessor::MSAAPostProcessor(int level, int width, int height) : width(w
     glVertexArrayAttribFormat(vao, texCordLocation, 2, GL_FLOAT, false, 0);
     glVertexArrayVertexBuffer(vao, texCordLocation, vbo, 2 * sizeof(float), 2 * 2 * sizeof(float));
 
-    shaderProgram.bind();
-    shaderProgram.uniform("screenTexture", 0);
+    msaa_Shader->bind();
+    msaa_Shader->uniform("screenTexture", 0);
 }
 
 void MSAAPostProcessor::prepareContext() {
@@ -89,7 +75,7 @@ void MSAAPostProcessor::postProcess(GLuint framebuffer) {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
     glDisable(GL_BLEND);
-    shaderProgram.bind();
+    msaa_Shader->bind();
     glBindTextureUnit(0, postProcessingTexture);
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

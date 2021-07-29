@@ -1,0 +1,11 @@
+#ifndef MAZE_SHADERS_H
+#define MAZE_SHADERS_H
+
+class Shader;
+
+class ShaderProgram;
+
+@Definitions@
+int initShaders();
+
+#endif //MAZE_SHADERS_H

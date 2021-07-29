@@ -1,0 +1,11 @@
+const char* shader_code_@Program_name@_@Shader_type@ = R"(@Shader_code@)";
+@Program_name@_Shader_@Shader_type@ = new Shader(GL_@Shader_type@_SHADER);
+if (!@Program_name@_Shader_@Shader_type@->loadShader(const_cast<char *>(shader_code_@Program_name@_@Shader_type@))) {
+#ifndef NDEBUG
+    GLchar log[LOG_BUFFER_LENGTH];
+    @Program_name@_Shader_@Shader_type@->getInfoLog(LOG_BUFFER_LENGTH, nullptr, log);
+    std::cout << log << std::endl;
+#endif
+    return -1;
+}
+@Program_var_name@->attachProgram(*@Program_name@_Shader_@Shader_type@);

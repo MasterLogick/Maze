@@ -1,8 +1,7 @@
 #ifndef MAZE_MSAAPOSTPROCESSOR_H
 #define MAZE_MSAAPOSTPROCESSOR_H
 
-#include <glad/gl.h>
-#include "../shader/ShaderProgram.h"
+#include <glad/types.h>
 
 class MSAAPostProcessor {
 private:
@@ -15,8 +14,6 @@ private:
     GLuint multiSampledFramebuffer;
     GLuint multiSampledTexture;
     GLuint multiSampledRenderbuffer;
-
-    ShaderProgram shaderProgram;
 
 public:
 

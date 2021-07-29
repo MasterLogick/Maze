@@ -1,2 +1,4 @@
 /cmake-build-debug/
 /cmake-build-release/
+/src/graphics/shader/Shaders.h
+/src/graphics/shader/Shaders.cpp

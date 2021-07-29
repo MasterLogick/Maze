@@ -7,6 +7,7 @@
 #include "graphics/shader/Shader.h"
 #include "graphics/shader/ShaderProgram.h"
 #include "graphics/post_proccessing/MSAAPostProcessor.h"
+#include "graphics/shader/Shaders.h"
 
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 500
@@ -145,28 +146,7 @@ int main() {
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
 
-    Shader vert(GL_VERTEX_SHADER);
-    if (!vert.loadShader("/home/user/CLionProjects/Maze/res/shaders/basic/vertex.glsl")) {
-        GLchar log[LOG_BUFFER_LENGTH];
-        vert.getInfoLog(LOG_BUFFER_LENGTH, nullptr, log);
-        std::cout << log << std::endl;
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return -1;
-    }
-    Shader frag(GL_FRAGMENT_SHADER);
-    if (!frag.loadShader("/home/user/CLionProjects/Maze/res/shaders/basic/fragment.glsl")) {
-        GLchar log[LOG_BUFFER_LENGTH];
-        frag.getInfoLog(LOG_BUFFER_LENGTH, nullptr, log);
-        std::cout << log << std::endl;
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return -1;
-    }
-    ShaderProgram shaderProgram;
-    shaderProgram.attachProgram(vert);
-    shaderProgram.attachProgram(frag);
-    shaderProgram.link();
+    initShaders();
 
     glm::mat4x4 ortho = glm::ortho<float>(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT);
     GLuint blockVBO;
@@ -181,7 +161,7 @@ int main() {
     glBindBufferRange(GL_UNIFORM_BUFFER, SCREEN_INFO_BINDING_POINT, blockVBO, 0,
                       sizeof(glm::mat4x4) + 2 * sizeof(float));
 
-    shaderProgram.bindUniformBlock(SCREEN_INFO_BINDING_POINT, const_cast<char *>("Screen"));
+    basic_Shader->bindUniformBlock(SCREEN_INFO_BINDING_POINT, const_cast<char *>("Screen"));
 
     GLuint vao;
     GLuint vbo;
@@ -190,7 +170,7 @@ int main() {
     glCreateVertexArrays(1, &vao);
     glCreateBuffers(1, &vbo);
     glNamedBufferData(vbo, 3 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
-    GLuint attribLoc = shaderProgram.getAttribLocation("localPos");
+    GLuint attribLoc = basic_Shader->getAttribLocation("localPos");
     glEnableVertexArrayAttrib(vao, attribLoc);
     glVertexArrayAttribFormat(vao, attribLoc, 2, GL_FLOAT, false, 0);
     glVertexArrayVertexBuffer(vao, attribLoc, vbo, 0, 2 * sizeof(float));
@@ -201,7 +181,7 @@ int main() {
         processor.prepareContext();
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        shaderProgram.bind();
+        basic_Shader->bind();
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);

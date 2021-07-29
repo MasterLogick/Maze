@@ -1,4 +1,6 @@
 #include "ShaderProgram.h"
+#include <glad/gl.h>
+#include "Shader.h"
 
 ShaderProgram::ShaderProgram() : attribLocations(), uniformLocations() {
     program = glCreateProgram();

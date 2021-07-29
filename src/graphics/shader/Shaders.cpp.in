@@ -1,0 +1,17 @@
+#include "Shaders.h"
+#include <glad/types.h>
+#include <glad/constants.h>
+#include "Shader.h"
+#include "ShaderProgram.h"
+
+#ifndef NDEBUG
+
+#include <iostream>
+
+#endif
+
+@Declarations@
+int initShaders() {
+    @C_code@
+    return 0;
+}
