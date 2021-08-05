@@ -8,16 +8,49 @@
 #include "graphics/shader/ShaderProgram.h"
 #include "graphics/post_proccessing/MSAAPostProcessor.h"
 #include "graphics/shader/Shaders.h"
+#include "core/maze_generator/MazeGenerator.h"
+#include "graphics/drawer/MazeDrawer.h"
+#include <thread>
 
 #define WINDOW_WIDTH 1000
-#define WINDOW_HEIGHT 500
+#define WINDOW_HEIGHT 1000
 #define SCREEN_INFO_BINDING_POINT 0
 
 bool shouldClose = false;
+Point pos(0, 0);
+Cell **maze = nullptr;
 
 void shouldCloseCallback(GLFWwindow *window) {
     shouldClose = true;
     std::cout << "lol" << std::endl;
+}
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        if (key == GLFW_KEY_ESCAPE) {
+            shouldClose = true;
+            return;
+        }
+        if (key == GLFW_KEY_UP) {
+            if (!maze[pos.x][pos.y].hasBorder(NORTH_SIDE)) {
+                pos = pos.move(NORTH_SIDE);
+            }
+        }
+        if (key == GLFW_KEY_LEFT) {
+            if (!maze[pos.x][pos.y].hasBorder(WEST_SIDE))
+                pos = pos.move(WEST_SIDE);
+        }
+        if (key == GLFW_KEY_DOWN) {
+            if (!maze[pos.x][pos.y].hasBorder(SOUTH_SIDE)) {
+                pos = pos.move(SOUTH_SIDE);
+            }
+        }
+        if (key == GLFW_KEY_RIGHT) {
+            if (!maze[pos.x][pos.y].hasBorder(EAST_SIDE)) {
+                pos = pos.move(EAST_SIDE);
+            }
+        }
+    }
 }
 
 void error_callback(int error, const char *description) {
@@ -110,20 +143,19 @@ void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum s
 #endif
 
 int main() {
-    glfwSetErrorCallback(error_callback);
     if (!glfwInit()) {
         std::cout << "Can't initialise GLFW" << std::endl;
         return -1;
     }
+    glfwDefaultWindowHints();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwDefaultWindowHints();
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); //OS X compilation fix
 #endif
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    GLFWwindow *window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Maze", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Maze", nullptr, nullptr);
     if (!window) {
         std::cout << "Can't create GLFW window" << std::endl;
         glfwTerminate();
@@ -136,6 +168,7 @@ int main() {
         return -1;
     }
     glfwSetWindowCloseCallback(window, shouldCloseCallback);
+    glfwSetKeyCallback(window, keyCallback);
     glfwSwapInterval(1);
 #ifndef NDEBUG
     glEnable(GL_DEBUG_OUTPUT);
@@ -177,22 +210,23 @@ int main() {
 
     MSAAPostProcessor processor(4, WINDOW_WIDTH, WINDOW_HEIGHT);
 
+    MazeGenerator generator(20, 20);
+    maze = generator.getMaze();
+    MazeDrawer drawer(generator, WINDOW_WIDTH, WINDOW_HEIGHT);
+    while (!generator.isComplete()) {
+        generator.nextStep();
+    }
     while (!shouldClose) {
         processor.prepareContext();
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        basic_Shader->bind();
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        drawer.drawMaze();
+        drawer.drawPlayer(pos);
         processor.postProcess(0);
         glfwSwapBuffers(window);
         glfwPollEvents();
-
     }
     glfwDestroyWindow(window);
-    glfwTerminate();
-    std::cout << "Hello, World!" << std::endl;
     glfwTerminate();
     return 0;
 }

@@ -1,6 +1,5 @@
 #include "Shaders.h"
-#include <glad/types.h>
-#include <glad/constants.h>
+#include <glad/gl.h>
 #include "Shader.h"
 #include "ShaderProgram.h"
 
@@ -13,5 +12,6 @@
 @Declarations@
 int initShaders() {
     @C_code@
+    glReleaseShaderCompiler();
     return 0;
 }
