@@ -1,55 +1,56 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 #include <glad/gl.h>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include "graphics/shader/Shader.h"
 #include "graphics/shader/ShaderProgram.h"
 #include "graphics/post_proccessing/MSAAPostProcessor.h"
 #include "graphics/shader/Shaders.h"
 #include "core/maze_generator/MazeGenerator.h"
 #include "graphics/drawer/MazeDrawer.h"
-#include <thread>
+#include "graphics/camera/Camera.h"
+#include "graphics/fps_counter/FPSCounter.h"
 
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 1000
 #define SCREEN_INFO_BINDING_POINT 0
 
 bool shouldClose = false;
-Point pos(0, 0);
-Cell **maze = nullptr;
+Camera *cam;
 
 void shouldCloseCallback(GLFWwindow *window) {
     shouldClose = true;
     std::cout << "lol" << std::endl;
 }
 
-void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-        if (key == GLFW_KEY_ESCAPE) {
-            shouldClose = true;
-            return;
-        }
-        if (key == GLFW_KEY_UP) {
-            if (!maze[pos.x][pos.y].hasBorder(NORTH_SIDE)) {
-                pos = pos.move(NORTH_SIDE);
-            }
-        }
-        if (key == GLFW_KEY_LEFT) {
-            if (!maze[pos.x][pos.y].hasBorder(WEST_SIDE))
-                pos = pos.move(WEST_SIDE);
-        }
-        if (key == GLFW_KEY_DOWN) {
-            if (!maze[pos.x][pos.y].hasBorder(SOUTH_SIDE)) {
-                pos = pos.move(SOUTH_SIDE);
-            }
-        }
-        if (key == GLFW_KEY_RIGHT) {
-            if (!maze[pos.x][pos.y].hasBorder(EAST_SIDE)) {
-                pos = pos.move(EAST_SIDE);
-            }
-        }
+double xpos, ypos;
+
+void processCallbacks(GLFWwindow *window) {
+    glfwPollEvents();
+    double dxpos, dypos;
+    glfwGetCursorPos(window, &dxpos, &dypos);
+    cam->rotate(xpos - dxpos, ypos - dypos);
+    xpos = dxpos;
+    ypos = dypos;
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        shouldClose = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        cam->forward(1.0f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        cam->left(1.0f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        cam->back(1.0f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        cam->right(1.0f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        cam->up(1.0f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        cam->down(1.0f);
     }
 }
 
@@ -168,33 +169,23 @@ int main() {
         return -1;
     }
     glfwSetWindowCloseCallback(window, shouldCloseCallback);
-    glfwSetKeyCallback(window, keyCallback);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 #ifndef NDEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(message_callback, nullptr);
 #endif
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
 
     initShaders();
 
-    glm::mat4x4 ortho = glm::ortho<float>(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT);
-    GLuint blockVBO;
-    glCreateBuffers(1, &blockVBO);
-    glNamedBufferData(blockVBO, sizeof(glm::mat4x4) + 4 * sizeof(float), nullptr, GL_STATIC_DRAW);
-    glNamedBufferSubData(blockVBO, 0L, sizeof(glm::mat4x4), glm::value_ptr(ortho));
-    float width = WINDOW_WIDTH;
-    float height = WINDOW_HEIGHT;
-    glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4), sizeof(float), &width);
-    glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4) + sizeof(float), sizeof(float), &height);
-    glNamedBufferSubData(blockVBO, sizeof(glm::mat4x4) + 2 * sizeof(float), 2 * sizeof(float), nullptr);
-    glBindBufferRange(GL_UNIFORM_BUFFER, SCREEN_INFO_BINDING_POINT, blockVBO, 0,
-                      sizeof(glm::mat4x4) + 2 * sizeof(float));
-
-    basic_Shader->bindUniformBlock(SCREEN_INFO_BINDING_POINT, const_cast<char *>("Screen"));
+    Camera camera(WINDOW_WIDTH, WINDOW_HEIGHT);
+    camera.bindUniformLayout(*basic_Shader, "Camera");
+    camera.bindUniformLayout(*border_Shader, "Camera");
+    cam = &camera;
 
     GLuint vao;
     GLuint vbo;
@@ -210,21 +201,24 @@ int main() {
 
     MSAAPostProcessor processor(4, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    MazeGenerator generator(20, 20);
-    maze = generator.getMaze();
+    MazeGenerator generator(1, 1);
     MazeDrawer drawer(generator, WINDOW_WIDTH, WINDOW_HEIGHT);
     while (!generator.isComplete()) {
         generator.nextStep();
     }
+
+    FPSCounter counter(60);
+
     while (!shouldClose) {
+        processCallbacks(window);
+        camera.updateShaderUniformLayout();
         processor.prepareContext();
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         drawer.drawMaze();
-        drawer.drawPlayer(pos);
         processor.postProcess(0);
         glfwSwapBuffers(window);
-        glfwPollEvents();
+        counter.countFPSAndSleep();
     }
     glfwDestroyWindow(window);
     glfwTerminate();

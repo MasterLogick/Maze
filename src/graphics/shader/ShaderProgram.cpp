@@ -35,30 +35,30 @@ GLuint ShaderProgram::getAttribLocation(const GLchar *name) {
     return attribLocations[name];
 }
 
-void ShaderProgram::bindUniformBlock(int bindingPoint, char *name) {
+void ShaderProgram::bindUniformBlock(int bindingPoint, const GLchar *name) {
     GLuint index = glGetUniformBlockIndex(program, name);
     glUniformBlockBinding(program, index, bindingPoint);
 }
 
-void ShaderProgram::uniform(const char *name, float val) {
+void ShaderProgram::uniform(const GLchar *name, float val) {
     if (uniformLocations.find(name) == uniformLocations.end())
         uniformLocations[name] = glGetUniformLocation(program, name);
     glUniform1f(uniformLocations[name], val);
 }
 
-void ShaderProgram::uniform(const char *name, int val) {
+void ShaderProgram::uniform(const GLchar *name, int val) {
     if (uniformLocations.find(name) == uniformLocations.end())
         uniformLocations[name] = glGetUniformLocation(program, name);
     glUniform1i(uniformLocations[name], val);
 }
 
-void ShaderProgram::uniform3(const char *name, float *val) {
+void ShaderProgram::uniform3(const GLchar *name, float *val) {
     if (uniformLocations.find(name) == uniformLocations.end())
         uniformLocations[name] = glGetUniformLocation(program, name);
     glUniform3fv(uniformLocations[name], 1, val);
 }
 
-void ShaderProgram::uniform4(const char *name, float *val) {
+void ShaderProgram::uniform4(const GLchar *name, float *val) {
     if (uniformLocations.find(name) == uniformLocations.end())
         uniformLocations[name] = glGetUniformLocation(program, name);
     glUniform4fv(uniformLocations[name], 1, val);

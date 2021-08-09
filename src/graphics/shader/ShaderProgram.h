@@ -29,15 +29,15 @@ public:
 
     GLuint getAttribLocation(const GLchar *name);
 
-    void bindUniformBlock(int bindingPoint, char *name);
+    void bindUniformBlock(int bindingPoint, const GLchar *name);
 
-    void uniform(const char *name, float val);
+    void uniform(const GLchar *name, float val);
 
-    void uniform(const char *name, int val);
+    void uniform(const GLchar *name, int val);
 
-    void uniform3(const char *name, float *val);
+    void uniform3(const GLchar *name, float *val);
 
-    void uniform4(const char *name, float *val);
+    void uniform4(const GLchar *name, float *val);
 };
 
 
