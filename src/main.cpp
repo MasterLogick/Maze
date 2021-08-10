@@ -16,10 +16,30 @@
 
 bool shouldClose = false;
 Camera *cam;
+int joystickId = -1;
 
 void shouldCloseCallback(GLFWwindow *window) {
     shouldClose = true;
-    std::cout << "lol" << std::endl;
+}
+
+void pollNextAvailableJoystick() {
+    for (int i = 0; i <= GLFW_JOYSTICK_LAST; ++i) {
+        if (glfwJoystickPresent(i) == GLFW_TRUE) {
+            std::cout << "set current joystick to " << joystickId << std::endl;
+            joystickId = i;
+            return;
+        }
+    }
+    joystickId = -1;
+}
+
+void joystickCallback(int jid, int event) {
+    if (event == GLFW_CONNECTED) {
+        joystickId = jid;
+    }
+    if (event == GLFW_DISCONNECTED) {
+        pollNextAvailableJoystick();
+    }
 }
 
 double xpos, ypos;
@@ -28,7 +48,7 @@ void processCallbacks(GLFWwindow *window) {
     glfwPollEvents();
     double dxpos, dypos;
     glfwGetCursorPos(window, &dxpos, &dypos);
-    cam->rotate(xpos - dxpos, ypos - dypos);
+    cam->rotate(xpos - dxpos, dypos - ypos);
     xpos = dxpos;
     ypos = dypos;
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -51,6 +71,30 @@ void processCallbacks(GLFWwindow *window) {
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         cam->down(1.0f);
+    }
+    if (joystickId != -1) {
+        int count;
+        const float *axes = glfwGetJoystickAxes(joystickId, &count);
+        if (count == 6 && axes) {
+            if (std::abs(axes[0]) >= 0.1) {
+                cam->left(-axes[0]);
+            }
+            if (std::abs(axes[1]) >= 0.1) {
+                cam->forward(-axes[1]);
+            }
+            if (std::abs(axes[2]) > -0.9) {
+                cam->up(axes[2]);
+            }
+            if (std::abs(axes[3]) >= 0.1) {
+                cam->rotate(-axes[3], 0);
+            }
+            if (std::abs(axes[4]) >= 0.1) {
+                cam->rotate(0, axes[4]);
+            }
+            if (std::abs(axes[5]) > -0.9) {
+                cam->down(axes[5]);
+            }
+        }
     }
 }
 
@@ -170,6 +214,10 @@ int main() {
     }
     glfwSetWindowCloseCallback(window, shouldCloseCallback);
     glfwSwapInterval(0);
+
+    glfwSetJoystickCallback(joystickCallback);
+    pollNextAvailableJoystick();
+
 #ifndef NDEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -186,6 +234,9 @@ int main() {
     camera.bindUniformLayout(*basic_Shader, "Camera");
     camera.bindUniformLayout(*border_Shader, "Camera");
     cam = &camera;
+    camera.forward(100 * 50);
+    camera.up(50*100);
+    camera.right(100 * 50);
 
     GLuint vao;
     GLuint vbo;
@@ -201,15 +252,13 @@ int main() {
 
     MSAAPostProcessor processor(4, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    MazeGenerator generator(1, 1);
+    MazeGenerator generator(100, 100);
     MazeDrawer drawer(generator, WINDOW_WIDTH, WINDOW_HEIGHT);
-    while (!generator.isComplete()) {
-        generator.nextStep();
-    }
 
     FPSCounter counter(60);
 
     while (!shouldClose) {
+        generator.nextStep();
         processCallbacks(window);
         camera.updateShaderUniformLayout();
         processor.prepareContext();

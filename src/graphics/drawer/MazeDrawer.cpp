@@ -139,7 +139,7 @@ void MazeDrawer::drawMaze() {
                 mappedVertexes[(i * height + j) * 4 * WALL_VERTEXES_COUNT * VERTEX_SIZE + 16] = FLOOR_Y;
                 mappedVertexes[(i * height + j) * 4 * WALL_VERTEXES_COUNT * VERTEX_SIZE + 17] = baseZ + BIGGEST_PART;
             }
-            if (cell.hasBorder(WEST_SIDE)) {
+            if (cell.hasBorder(EAST_SIDE)) {
                 //0
                 mappedVertexes[(i * height + j) * 4 * WALL_VERTEXES_COUNT * VERTEX_SIZE + 18] = baseX + CELL_SIDE;
                 mappedVertexes[(i * height + j) * 4 * WALL_VERTEXES_COUNT * VERTEX_SIZE + 19] = CEIL_Y;
@@ -241,7 +241,7 @@ void MazeDrawer::drawMaze() {
                 mappedVertexes[(i * height + j) * 4 * WALL_VERTEXES_COUNT * VERTEX_SIZE + 52] = FLOOR_Y;
                 mappedVertexes[(i * height + j) * 4 * WALL_VERTEXES_COUNT * VERTEX_SIZE + 53] = baseZ + ONE_PART;
             }
-            if (cell.hasBorder(EAST_SIDE)) {
+            if (cell.hasBorder(WEST_SIDE)) {
                 //0
                 mappedVertexes[(i * height + j) * 4 * WALL_VERTEXES_COUNT * VERTEX_SIZE + 54] = baseX;
                 mappedVertexes[(i * height + j) * 4 * WALL_VERTEXES_COUNT * VERTEX_SIZE + 55] = CEIL_Y;

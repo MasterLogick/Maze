@@ -6,19 +6,14 @@
 #include <glm/gtx/rotate_normalized_axis.hpp>
 #include "../shader/ShaderProgram.h"
 
-#ifndef NDEBUG
-
-#include <iostream>
-
-#endif
 std::atomic<int> BindingPoint(0);
 glm::vec3 UP(0, 1, 0);
 
 Camera::Camera(float aspect) {
     bindingPoint = BindingPoint;
     BindingPoint++;
-    perspective = glm::perspective<float>(glm::radians(90.0f), aspect, 0.1f,
-                                          1000.0f);
+    perspective = glm::perspective<float>(glm::radians(80.0f), aspect, 0.1f,
+                                          1'000'000.0f);
     pos = glm::vec3(0);
     eyeDirection = glm::vec3(1, 0, 0);
     center = pos + eyeDirection;
@@ -78,7 +73,7 @@ void Camera::down(float d) {
 void Camera::rotate(float dx, float dy) {
     eyeDirection = glm::vec3(glm::rotateNormalizedAxis(
             glm::rotateNormalizedAxis(glm::identity<glm::mat4x4>(), glm::radians(dx), glm::vec3(0, 1, 0)),
-            glm::radians(dy), glm::vec3(1, 0, 0)) * glm::vec4(eyeDirection, 1.0f));
+            glm::radians(dy), glm::normalize(glm::cross(UP, eyeDirection))) * glm::vec4(eyeDirection, 1.0f));
     center = pos + eyeDirection;
 }
 
